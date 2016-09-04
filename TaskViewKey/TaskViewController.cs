@@ -22,18 +22,14 @@ namespace TaskViewKey
         private IntPtr hookId = IntPtr.Zero;
         private const int WH_KEYBOARD_ALL = 13;
 
+        private const int WM_KEYDOWN = 0x0100;
         private const int WM_KEYUP = 0x0101;
-        private const int WM_SYSKEYUP = 0x0105;
-
 
         private IntPtr HookCallback(int nCode, IntPtr wParam, ref KBDLLHOOKSTRUCT lParam)
         {
-            //Filter wParam for KeyUp events only - otherwise this code
-            //will execute twice for each keystroke (ie: on KeyDown and KeyUp)
-            //WM_SYSKEYUP is necessary to trap Alt-key combinations
             if (nCode >= 0)
             {
-                if (wParam == (IntPtr)WM_KEYUP || wParam == (IntPtr)WM_SYSKEYUP)
+                if (wParam == (IntPtr)WM_KEYDOWN)
                 {
                     if ((lParam.vkCode == 91) || (lParam.vkCode == 92))
                     {
