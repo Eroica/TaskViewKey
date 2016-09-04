@@ -3,6 +3,9 @@ This small program always executes Win+Tab whenever a Windows key is presssed. T
 
 Written in C#.
 
+# Install
+Compile the program, and put the executable into `shell:startup` (paste into Win+R or Explorer).
+
 # License
 Copyright (c) <2016> <Eroica>
 
