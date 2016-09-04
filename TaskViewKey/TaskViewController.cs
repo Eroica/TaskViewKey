@@ -6,6 +6,8 @@ namespace TaskViewKey
 {
     internal class TaskViewController : IDisposable
     {
+
+        #region windows.h imports
         public struct KBDLLHOOKSTRUCT
         {
             public int vkCode;
@@ -15,43 +17,51 @@ namespace TaskViewKey
             int dwExtraInfo;
         }
 
-
-        private delegate IntPtr HookHandlerDelegate(int nCode, IntPtr wParam, ref KBDLLHOOKSTRUCT lParam);
-        private HookHandlerDelegate Handler;
-
-        private IntPtr hookId = IntPtr.Zero;
-        private const int WH_KEYBOARD_ALL = 13;
-
         private const int WM_KEYDOWN = 0x0100;
         private const int WM_KEYUP = 0x0101;
+        private const int WH_KEYBOARD_LL = 13;
+
+        private const int LWIN = 91;
+        private const int RWIN = 92;
+        #endregion
+
+        // dummy value to trap the key
+        private const int TRAP_KEY = 1;
+
+        private delegate IntPtr HookHandlerDelegate(int nCode, IntPtr wParam, ref KBDLLHOOKSTRUCT lParam);
+        private HookHandlerDelegate handler;
+        private IntPtr hookId = IntPtr.Zero;
+
+        public TaskViewController()
+        {
+            handler = new HookHandlerDelegate(HookCallback);
+            using (Process curProcess = Process.GetCurrentProcess())
+            using (ProcessModule curModule = curProcess.MainModule)
+            {
+                hookId = SetWindowsHookEx(WH_KEYBOARD_LL, handler, GetModuleHandle(curModule.ModuleName), 0);
+            }
+        }
 
         private IntPtr HookCallback(int nCode, IntPtr wParam, ref KBDLLHOOKSTRUCT lParam)
         {
             if (nCode >= 0)
             {
-                if (wParam == (IntPtr)WM_KEYDOWN)
+                if ((lParam.vkCode == LWIN) || (lParam.vkCode == RWIN))
                 {
-                    if ((lParam.vkCode == 91) || (lParam.vkCode == 92))
+                    if (wParam == (IntPtr)WM_KEYDOWN)
+                    {
+                        return (IntPtr)TRAP_KEY;
+                    }
+
+                    if (wParam == (IntPtr)WM_KEYUP)
                     {
                         KeyboardActions.OpenTaskView();
-                        return (IntPtr)1;
+                        return (IntPtr)TRAP_KEY;
                     }
                 }
             }
 
             return CallNextHookEx(hookId, nCode, wParam, ref lParam);
-        }
-
-
-        public TaskViewController()
-        {
-            Handler = new HookHandlerDelegate(HookCallback);
-            using (Process curProcess = Process.GetCurrentProcess())
-            using (ProcessModule curModule = curProcess.MainModule)
-            {
-                hookId = SetWindowsHookEx(WH_KEYBOARD_ALL, Handler, GetModuleHandle(curModule.ModuleName), 0);
-            }
-
         }
 
         public void Dispose()
